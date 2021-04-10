@@ -1070,7 +1070,7 @@ void Mod::loadResourceConfigFile(const std::string &filename)
 					color.r = (*j)[0].as<int>(0);
 					color.g = (*j)[1].as<int>(0);
 					color.b = (*j)[2].as<int>(0);
-					color.unused = (*j)[3].as<int>(2);
+					color.a = (*j)[3].as<int>(2);
 					// technically its breaking change as it always overwritte from offset `start + 0` but no two mods could work correctly before this change.
 					_transparencies[start + curr++] = color;
 				}
@@ -3682,7 +3682,11 @@ void Mod::createTransparencyLUT(Palette *pal)
 	for (std::vector<SDL_Color>::const_iterator tint = _transparencies.begin(); tint != _transparencies.end(); ++tint)
 	{
 		// then the opacity levels, using the alpha channel as the step
+<<<<<<< HEAD
 		for (int opacity = 1; opacity <= opacityMax; ++opacity)
+=======
+		for (int opacity = 1; opacity < 1 + tint->a * 4; opacity += tint->a)
+>>>>>>> 829335496 (sdl2)
 		{
 			// pseudo interpolation of palette color with tint
 			// for small values `op` its should behave same as original TFTD
