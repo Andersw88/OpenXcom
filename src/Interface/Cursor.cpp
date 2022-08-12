@@ -36,6 +36,7 @@ namespace OpenXcom
  */
 Cursor::Cursor(int width, int height, int x, int y) : Surface(width, height, x, y), _color(0)
 {
+	setUseRendererInterface();
 }
 
 /**
@@ -91,7 +92,7 @@ void Cursor::draw()
 	for (int i = 0; i < 4; ++i)
 	{
 		drawLine(x1, y1, x1, y2, color);
-		drawLine(x1, y1, x2, getWidth() - 1, color);
+		drawLine(x1, y1, x2, getWidth() + 1, color);
 		x1++;
 		y1 += 2;
 		y2--;

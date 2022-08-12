@@ -65,7 +65,7 @@ Language::Language() : _handler(0), _direction(DIRECTION_LTR), _wrap(WRAP_WORDS)
 		_names["hu"] = "Magyar";
 		_names["it"] = "Italiano";
 		_names["is"] = "Íslenska";
-		_names["ja"] = "日本語";
+		_names["ja"] = R"(日本語)";
 		_names["ko"] = "한국어";
 		_names["lb"] = "Lëtzebuergesch";
 		_names["lv"] = "Latviešu";
@@ -74,8 +74,8 @@ Language::Language() : _handler(0), _direction(DIRECTION_LTR), _wrap(WRAP_WORDS)
 		_names["pl"] = "Polski";
 		_names["pt-BR"] = "Português (BR)";
 		_names["pt-PT"] = "Português (PT)";
-		_names["ro"] = "Română";
-		_names["ru"] = "Русский";
+		_names["ro"] = R"(Română)";
+		_names["ru"] = R"(Русский)";
 		_names["sk"] = "Slovenčina";
 		_names["sl"] = "Slovenščina";
 		_names["sv"] = "Svenska";
@@ -83,8 +83,8 @@ Language::Language() : _handler(0), _direction(DIRECTION_LTR), _wrap(WRAP_WORDS)
 		_names["tr"] = "Türkçe";
 		_names["uk"] = "Українська";
 		_names["vi"] = "Tiếng Việt";
-		_names["zh-CN"] = "中文";
-		_names["zh-TW"] = "文言";
+		_names["zh-CN"] = R"(中文)";
+		_names["zh-TW"] = R"(文言)";
 	}
 	if (_rtl.empty())
 	{

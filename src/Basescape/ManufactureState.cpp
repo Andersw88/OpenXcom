@@ -169,7 +169,9 @@ void ManufactureState::fillProductionList()
 		s1 << (*iter)->getAssignedEngineers();
 		std::ostringstream s2;
 		s2 << (*iter)->getAmountProduced() << "/";
-		if ((*iter)->getInfiniteAmount()) s2 << "∞";
+		if ((*iter)->getInfiniteAmount()) {
+			s2 << "INF";
+		}
 		else s2 << (*iter)->getAmountTotal();
 		if ((*iter)->getSellItems()) s2 << " $";
 		std::ostringstream s3;
@@ -177,7 +179,7 @@ void ManufactureState::fillProductionList()
 		std::ostringstream s4;
 		if ((*iter)->getInfiniteAmount())
 		{
-			s4 << "∞";
+			s4 << "INF";
 		}
 		else if ((*iter)->getAssignedEngineers() > 0)
 		{

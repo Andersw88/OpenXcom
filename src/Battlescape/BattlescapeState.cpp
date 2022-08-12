@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
-#include <SDL_gfxPrimitives.h>
+#include <SDL2_gfxPrimitives.h>
 #include "Map.h"
 #include "Camera.h"
 #include "BattlescapeState.h"
@@ -1686,6 +1686,8 @@ void BattlescapeState::saveAIMap()
 	int h = _save->getMapSizeY();
 
 	SDL_Surface *img = SDL_CreateRGBSurface(0, w * 8, h * 8, 24, 0xff, 0xff00, 0xff0000, 0);
+
+	SDL_Renderer* renderer = SDL_CreateSoftwareRenderer(img);
 	Log(LOG_INFO) << "unit = " << unit->getId();
 	memset(img->pixels, 0, img->pitch * img->h);
 
@@ -1725,7 +1727,7 @@ void BattlescapeState::saveAIMap()
 			if (t->getTUCost(O_FLOOR, MT_FLY) != 255 && t->getTUCost(O_OBJECT, MT_FLY) != 255)
 			{
 				SDL_FillRect(img, &r, SDL_MapRGB(img->format, 255, 0, 0x20));
-				characterRGBA(img, r.x, r.y,'*' , 0x7f, 0x7f, 0x7f, 0x7f);
+				characterRGBA(renderer, r.x, r.y,'*' , 0x7f, 0x7f, 0x7f, 0x7f);
 			} else
 			{
 				if (!t->getUnit()) SDL_FillRect(img, &r, SDL_MapRGB(img->format, 0x50, 0x50, 0x50)); // gray for blocked tile
@@ -1742,13 +1744,13 @@ void BattlescapeState::saveAIMap()
 					{
 					case FACTION_HOSTILE:
 						// #4080C0 is Volutar Blue
-						characterRGBA(img, r.x, r.y, (tilePos.z - z) ? 'a' : 'A', 0x40, 0x80, 0xC0, 0xff);
+						characterRGBA(renderer, r.x, r.y, (tilePos.z - z) ? 'a' : 'A', 0x40, 0x80, 0xC0, 0xff);
 						break;
 					case FACTION_PLAYER:
-						characterRGBA(img, r.x, r.y, (tilePos.z - z) ? 'x' : 'X', 255, 255, 127, 0xff);
+						characterRGBA(renderer, r.x, r.y, (tilePos.z - z) ? 'x' : 'X', 255, 255, 127, 0xff);
 						break;
 					case FACTION_NEUTRAL:
-						characterRGBA(img, r.x, r.y, (tilePos.z - z) ? 'c' : 'C', 255, 127, 127, 0xff);
+						characterRGBA(renderer, r.x, r.y, (tilePos.z - z) ? 'c' : 'C', 255, 127, 127, 0xff);
 						break;
 					}
 					break;
@@ -1759,12 +1761,12 @@ void BattlescapeState::saveAIMap()
 
 			if (t->getMapData(O_NORTHWALL) && t->getMapData(O_NORTHWALL)->getTUCost(MT_FLY) == 255)
 			{
-				lineRGBA(img, r.x, r.y, r.x+r.w, r.y, 0x50, 0x50, 0x50, 255);
+				lineRGBA(renderer, r.x, r.y, r.x+r.w, r.y, 0x50, 0x50, 0x50, 255);
 			}
 
 			if (t->getMapData(O_WESTWALL) && t->getMapData(O_WESTWALL)->getTUCost(MT_FLY) == 255)
 			{
-				lineRGBA(img, r.x, r.y, r.x, r.y+r.h, 0x50, 0x50, 0x50, 255);
+				lineRGBA(renderer, r.x, r.y, r.x, r.y+r.h, 0x50, 0x50, 0x50, 255);
 			}
 		}
 	}
@@ -1773,7 +1775,7 @@ void BattlescapeState::saveAIMap()
 
 	ss.str("");
 	ss << "z = " << tilePos.z;
-	stringRGBA(img, 12, 12, ss.str().c_str(), 0, 0, 0, 0x7f);
+	stringRGBA(renderer, 12, 12, ss.str().c_str(), 0, 0, 0, 0x7f);
 
 	int i = 0;
 	do

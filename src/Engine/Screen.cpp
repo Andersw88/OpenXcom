@@ -323,19 +323,28 @@ void Screen::resetDisplay(bool resetVideo)
 			Log(LOG_INFO) << "Attempting to set display to default resolution...";
 			if (SDL_CreateWindowAndRenderer(640, 480, _flags, &_window, &_renderer) < 0)
 			{
-				if (_flags & SDL_WINDOW_OPENGL)
-				{
-					Options::useOpenGL = false;
-				}
-				throw Exception(SDL_GetError());
+			if (_flags & SDL_WINDOW_OPENGL)
+			{
+			 	Options::useOpenGL = false;
 			}
+			throw Exception(SDL_GetError());
+			}
+			//SDL_Renderer *renderer = SDL_CreateRenderer(sdlWindow, -1, 0);
 		}
+
 		Log(LOG_INFO) << "Display set to " << getWidth() << "x" << getHeight() << "x" << (int)_surface->getSurface()->format->BitsPerPixel << ".";
 
 		if (useOpenGL())
 		{
 			SDL_GL_CreateContext(_window);
 		}
+
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");  // make the scaled rendering look smoother.
+		SDL_RenderSetLogicalSize(_renderer, width, height);
+
+		//SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 255);
+		//SDL_RenderClear(_renderer);
+		//SDL_RenderPresent(_renderer);
 
 		_screen = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 	}

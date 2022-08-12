@@ -45,12 +45,17 @@ protected:
 	void *_alignedBuffer;
 	std::string _tooltip;
 
+
 	/// Copies raw pixels.
 	template <typename T>
 	void rawCopy(const std::vector<T> &bytes);
 	/// Resizes the surface.
 	void resize(int width, int height);
+
 public:
+	/// Workaround to support sdl renderer when needed.
+	void setUseRendererInterface();
+	SDL_Renderer* _renderer = nullptr;
 	/// Creates a new surface with the specified size and position.
 	Surface(int width, int height, int x = 0, int y = 0, int bpp = 8);
 	/// Creates a new surface from an existing one.
@@ -152,7 +157,17 @@ public:
 		{
 			return;
 		}
-		*getRaw(x, y) = pixel;
+
+		if(_renderer)
+		{
+			SDL_Color& color = getPalette()[pixel];
+			SDL_SetRenderDrawColor(_renderer, color.r, color.g, color.b, color.a);
+			SDL_RenderDrawPoint(_renderer, x, y);
+		}
+		else
+		{
+			*getRaw(x, y) = pixel;
+		}
 	}
 	/**
 	 * Changes the color of a pixel in the surface and returns the

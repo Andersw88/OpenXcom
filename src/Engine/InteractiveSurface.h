@@ -42,7 +42,7 @@ private:
 	Uint8 _buttonsPressed;
 protected:
 	std::map<Uint8, ActionHandler> _click, _press, _release;
-	ActionHandler _in, _over, _out, _wheel;
+	ActionHandler _in, _over, _out, _wheel = 0;
 	std::map<SDL_Keycode, ActionHandler> _keyPress, _keyRelease;
 	bool _isHovered, _isFocused, _listButton;
 

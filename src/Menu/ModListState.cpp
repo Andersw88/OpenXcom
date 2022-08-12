@@ -127,13 +127,13 @@ ModListState::ModListState() : _curMasterIdx(0)
 	_lstMods->setSelectable(true);
 	_lstMods->setBackground(_window);
 	_lstMods->setWordWrap(true);
-	_lstMods->onMouseClick((ActionHandler)&OptionsModsState::lstModsClick);
-	_lstMods->onLeftArrowClick((ActionHandler)&OptionsModsState::lstModsLeftArrowClick);
-	_lstMods->onRightArrowClick((ActionHandler)&OptionsModsState::lstModsRightArrowClick);
-	_lstMods->onMousePress((ActionHandler)&OptionsModsState::lstModsMousePress);
-	_lstMods->onMouseIn((ActionHandler)&OptionsModsState::txtTooltipIn);
-	_lstMods->onMouseOut((ActionHandler)&OptionsModsState::txtTooltipOut);
-	_lstMods->onMouseOver((ActionHandler)&OptionsModsState::lstModsHover);
+	_lstMods->onMouseClick((ActionHandler)&ModListState::lstModsClick);
+	_lstMods->onLeftArrowClick((ActionHandler)&ModListState::lstModsLeftArrowClick);
+	_lstMods->onRightArrowClick((ActionHandler)&ModListState::lstModsRightArrowClick);
+	_lstMods->onMousePress((ActionHandler)&ModListState::lstModsMousePress);
+	_lstMods->onMouseIn((ActionHandler)&ModListState::txtTooltipIn);
+	_lstMods->onMouseOut((ActionHandler)&ModListState::txtTooltipOut);
+	_lstMods->onMouseOver((ActionHandler)&ModListState::lstModsHover);
 	lstModsRefresh(0);
 
 	_btnOk->setText(tr("STR_OK"));

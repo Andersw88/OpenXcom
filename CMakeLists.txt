@@ -2,8 +2,8 @@ cmake_minimum_required ( VERSION 3.1 )
 
 project ( OpenXcom )
 
-set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" )
-include(BuildType)
+
+# include(BuildType)
 include(GNUInstallDirs)
 
 # For yaml-cpp
@@ -21,6 +21,7 @@ set ( MSVC_WARNING_LEVEL 3 CACHE STRING "Visual Studio warning levels" )
 option ( FORCE_INSTALL_DATA_TO_BIN "Force installation of data to binary directory" OFF )
 set ( DATADIR "" CACHE STRING "Where to place datafiles" )
 set ( OPENXCOM_VERSION_STRING "" CACHE STRING "Version string (after x.x)" )
+option ( CONAN_DEPS "" ON )
 
 if ( CHECK_CCACHE )
   find_program( CCACHE_PROGRAM ccache )
@@ -49,6 +50,8 @@ set ( DEPS_DIR "${default_deps_dir}" CACHE STRING "Dependencies directory" )
 
 # Add check for library (SDL_gfx, yaml-cpp )
 if ( IS_DIRECTORY ${DEPS_DIR}/include )
+
+
    include_directories ( SYSTEM ${DEPS_DIR}/include/SDL ${DEPS_DIR}/include/yaml-cpp ${DEPS_DIR}/include )
    if ( CMAKE_CL_64 )
      link_directories ( ${DEPS_DIR}/lib/x64 )
@@ -62,7 +65,56 @@ if ( IS_DIRECTORY ${DEPS_DIR}/include )
    set ( YAMLCPP_LIBRARY yaml-cpp )
    set ( YAMLCPP_LIBRARY_DEBUG yaml-cppd )
    add_definitions( -DYAML_CPP_DLL )
+elseif ( CONAN_DEPS )
+
+   # need to set CMAKE_BUILD_TYPE for conan to set correct CONAN_SETTINGS
+   if (NOT DEFINED CMAKE_BUILD_TYPE )
+      if(DEV_BUILD)
+        set(CMAKE_BUILD_TYPE "Debug")
+      else()
+        set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+      endif()
+   endif()
+   include ( cmake/conan.cmake )
+
+   conan_cmake_configure(
+   REQUIRES
+       sdl/2.0.20
+       sdl_mixer/2.0.4
+       sdl_image/2.0.5
+       sdl_gfx/0.1
+       yaml-cpp/0.7.0
+   GENERATORS
+       cmake_find_package_multi
+   OPTIONS sdl_mixer:mad=False
+   )
+
+   set(CONAN_ENV "CXXFLAGS=/Z7")
+
+   message("CONAN_SETTINGS" ${CONAN_SETTINGS})
+   conan_cmake_install(
+       PATH_OR_REFERENCE .
+       BUILD missing
+       SETTINGS ${CONAN_SETTINGS}
+       ENV ${CONAN_ENV}
+   )
+
+   find_package ( SDL2 REQUIRED)
+   find_package ( SDL2_mixer COMPONENTS mixer REQUIRED)
+   find_package ( SDL2_gfx REQUIRED)
+   find_package ( SDL2_image REQUIRED)
+   find_package ( yaml-cpp REQUIRED)
+   set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" )
+
+   set( SDL_LIBRARY SDL2::SDL2 )
+   set ( SDLGFX_LIBRARY SDL2_gfx::SDL2_gfx )
+   set ( SDLMIXER_LIBRARY SDL2_mixer::SDL2_mixer )
+   set ( SDLIMAGE_LIBRARY SDL2_image::SDL2_image )
+   set ( YAMLCPP_LIBRARY yaml-cpp )
+   set ( YAMLCPP_LIBRARY_DEBUG ${YAMLCPP_LIBRARY} )
+
 else ( )
+  set ( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" )
   find_package ( SDL2 COMPONENTS mixer gfx image)
   find_package ( Yaml_cpp 0.5.3)
   set ( YAMLCPP_LIBRARY_DEBUG ${YAMLCPP_LIBRARY} )

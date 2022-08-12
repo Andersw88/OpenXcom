@@ -269,6 +269,9 @@ Globe::Globe(Game* game, int cenX, int cenY, int width, int height, int x, int y
 	_radars = new Surface(width, height, x, y);
 	_clipper = new FastLineClip(x, x+width, y, y+height);
 
+	setUseRendererInterface();
+	_countries->setUseRendererInterface();
+
 	// Animation timers
 	_blinkTimer = new Timer(100);
 	_blinkTimer->onTimer((SurfaceHandler)&Globe::blink);
@@ -879,6 +882,8 @@ void Globe::draw()
 	drawShadow();
 	drawMarkers();
 	drawDetail();
+
+
 }
 
 
@@ -889,7 +894,6 @@ void Globe::drawOcean()
 {
 	lock();
 	drawCircle(_cenX+1, _cenY, _radius+20, OCEAN_COLOR);
-//	ShaderDraw<Ocean>(ShaderSurface(this));
 	unlock();
 }
 
@@ -914,7 +918,7 @@ void Globe::drawLand()
 		}
 
 		// Apply textures according to zoom and shade
-		drawTexturedPolygon(x, y, (*i)->getPoints(), _texture->getFrame((*i)->getTexture() + _zoomTexture), 0, 0);
+		drawTexturedPolygon(x, y, (*i)->getPoints(), _texture->getFrame((*i)->getTexture() + _zoomTexture), *x, -(*y));
 	}
 }
 
@@ -1713,6 +1717,14 @@ void Globe::mouseRelease(Action *action, State *state)
  */
 void Globe::mouseClick(Action *action, State *state)
 {
+	if (action->getDetails()->wheel.y > 0)
+	{
+		zoomIn();
+	}
+	else if (action->getDetails()->wheel.y < 0)
+	{
+		zoomOut();
+	}
 	double lon, lat;
 	cartToPolar((Sint16)floor(action->getAbsoluteXMouse()), (Sint16)floor(action->getAbsoluteYMouse()), &lon, &lat);
 

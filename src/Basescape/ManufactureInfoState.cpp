@@ -314,7 +314,9 @@ void ManufactureInfoState::setAssignedEngineer()
 	_txtAllocated->setText(s3.str());
 	std::ostringstream s4;
 	s4 << ">" << Unicode::TOK_COLOR_FLIP;
-	if (_production->getInfiniteAmount()) s4 << "∞";
+	if (_production->getInfiniteAmount()) {
+		s4 << "INF";
+	}
 	else s4 << _production->getAmountTotal();
 	_txtTodo->setText(s4.str());
 	_txtMonthlyProfit->setText(tr("STR_MONTHLY_PROFIT").arg(Unicode::formatFunding(getMonthlyNetFunds()).c_str()));

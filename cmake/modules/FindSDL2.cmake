@@ -211,7 +211,7 @@ macro ( FindSDL_component _component )
 
   #Special case for SDL_gfx. This seems to be the only library where the main header is not SDL_${lib}.h.
   if ( ${UPPERCOMPONENT} STREQUAL "GFX" )
-    set ( SDL_header_name SDL_gfxPrimitives.h )
+    set ( SDL_header_name SDL2_gfxPrimitives.h )
     set ( SDL_COMPONENT_NAME GFXPRIMITIVES )
   endif ()
 

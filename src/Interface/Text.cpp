@@ -603,14 +603,13 @@ void Text::mousePress(Action* action, State* state)
 {
 	InteractiveSurface::mousePress(action, state);
 	if (_scroll &&
-		(action->getDetails()->button.button == SDL_BUTTON_WHEELUP ||
-		action->getDetails()->button.button == SDL_BUTTON_WHEELDOWN))
+		(action->getDetails()->button.button == SDL_MOUSEWHEEL))
 	{
 		int scrollArea = getHeight() - getTextHeight();
 		if (scrollArea < 0)
 		{
 			int scrollAmount = _font->getHeight() + _font->getSpacing();
-			if (action->getDetails()->button.button == SDL_BUTTON_WHEELDOWN)
+			if (action->getDetails()->button.button == SDL_MOUSEWHEEL)
 				scrollAmount = -scrollAmount;
 
 			_scrollY = Clamp(_scrollY + scrollAmount, scrollArea, 0);

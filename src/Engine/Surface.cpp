@@ -21,7 +21,7 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
-#include <SDL_gfxPrimitives.h>
+#include <SDL2_gfxPrimitives.h>
 #include <SDL_image.h>
 #include <SDL_endian.h>
 #include "../lodepng.h"
@@ -149,6 +149,8 @@ Surface::Surface(int width, int height, int x, int y, int bpp) : _x(x), _y(y), _
 		throw Exception(SDL_GetError());
 	}
 
+
+
 	SDL_SetColorKey(_surface, SDL_TRUE, 0);
 
 	_crop.w = 0;
@@ -176,6 +178,7 @@ Surface::Surface(const Surface& other)
 		int pitch = GetPitch(bpp, width);
 		_alignedBuffer = NewAligned(bpp, width, height);
 		_surface = SDL_CreateRGBSurfaceFrom(_alignedBuffer, width, height, bpp, pitch, 0, 0, 0, 0);
+		SDL_RenderSetLogicalSize(_renderer, width, height);
 		SDL_SetColorKey(_surface, SDL_TRUE, 0);
 		//cant call `setPalette` because its virtual function and it dont work correctly in constructor
 		SDL_SetPaletteColors(_surface->format->palette, other.getPalette(), 0, 255);
@@ -185,6 +188,11 @@ Surface::Surface(const Surface& other)
 	{
 		_surface = SDL_ConvertSurface(other._surface, other._surface->format, other._surface->flags);
 		_alignedBuffer = 0;
+	}
+
+	if(other._renderer)
+	{
+		_renderer = SDL_CreateSoftwareRenderer(_surface);
 	}
 
 	if (_surface == 0)
@@ -213,7 +221,13 @@ Surface::Surface(const Surface& other)
 Surface::~Surface()
 {
 	DeleteAligned(_alignedBuffer);
+	if(_renderer) SDL_DestroyRenderer(_renderer);
 	SDL_FreeSurface(_surface);
+}
+
+void Surface::setUseRendererInterface()
+{
+	_renderer = SDL_CreateSoftwareRenderer(_surface);
 }
 
 /**
@@ -480,8 +494,22 @@ void Surface::loadBdy(const std::string &filename)
  */
 void Surface::clear(Uint32 color)
 {
-	if (_surface->flags & SDL_SWSURFACE) memset(_surface->pixels, color, _surface->h*_surface->pitch);
-	else SDL_FillRect(_surface, &_clear, color);
+	if(_renderer)
+	{
+		//SDL_FillRect(_surface, &_clear, color);
+		//auto color = Palette::getRGBA(getPalette(), color);
+		auto c = (uint8_t *)(&color);
+		SDL_SetRenderDrawColor(_renderer, c[0], c[1], c[2], c[3]);
+		SDL_RenderClear(_renderer);
+		//SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
+		//SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
+		//SDL_RenderFillRect(_renderer, nullptr);
+	}
+	else
+	{
+		if (_surface->flags & SDL_SWSURFACE) memset(_surface->pixels, color, _surface->h*_surface->pitch);
+		else SDL_FillRect(_surface, &_clear, color);
+	}
 }
 
 /**
@@ -650,6 +678,10 @@ void Surface::blit(Surface *surface)
 		if (_redraw)
 			draw();
 
+		if(_renderer)
+		{
+			SDL_RenderPresent(this->_renderer);
+		}
 		SDL_Rect* cropper;
 		SDL_Rect target;
 		if (_crop.w == 0 && _crop.h == 0)
@@ -662,7 +694,10 @@ void Surface::blit(Surface *surface)
 		}
 		target.x = getX();
 		target.y = getY();
-		SDL_BlitSurface(_surface, cropper, surface->getSurface(), &target);
+		int error = SDL_BlitSurface(_surface, cropper, surface->getSurface(), &target);
+		if (error != 0)
+			Log(LOG_WARNING) << "SDL_BlitSurface: " << error;
+		// printf("error %d\n", error);
 	}
 }
 
@@ -740,7 +775,7 @@ void Surface::drawRect(Sint16 x, Sint16 y, Sint16 w, Sint16 h, Uint8 color)
  */
 void Surface::drawLine(Sint16 x1, Sint16 y1, Sint16 x2, Sint16 y2, Uint8 color)
 {
-	lineColor(_surface, x1, y1, x2, y2, Palette::getRGBA(getPalette(), color));
+	lineColor(_renderer, x1, y1, x2, y2, Palette::getRGBA(getPalette(), color));
 }
 
 /**
@@ -752,7 +787,7 @@ void Surface::drawLine(Sint16 x1, Sint16 y1, Sint16 x2, Sint16 y2, Uint8 color)
  */
 void Surface::drawCircle(Sint16 x, Sint16 y, Sint16 r, Uint8 color)
 {
-	filledCircleColor(_surface, x, y, r, Palette::getRGBA(getPalette(), color));
+	filledCircleColor(_renderer, x, y, r, Palette::getRGBA(getPalette(), color));
 }
 
 /**
@@ -764,7 +799,7 @@ void Surface::drawCircle(Sint16 x, Sint16 y, Sint16 r, Uint8 color)
  */
 void Surface::drawPolygon(Sint16 *x, Sint16 *y, int n, Uint8 color)
 {
-	filledPolygonColor(_surface, x, y, n, Palette::getRGBA(getPalette(), color));
+	filledPolygonColor(_renderer, x, y, n, Palette::getRGBA(getPalette(), color));
 }
 
 /**
@@ -778,7 +813,7 @@ void Surface::drawPolygon(Sint16 *x, Sint16 *y, int n, Uint8 color)
  */
 void Surface::drawTexturedPolygon(Sint16 *x, Sint16 *y, int n, Surface *texture, int dx, int dy)
 {
-	texturedPolygon(_surface, x, y, n, texture->getSurface(), dx, dy);
+	texturedPolygon(_renderer, x, y, n, texture->getSurface(), dx, dy);
 }
 
 /**
@@ -790,7 +825,7 @@ void Surface::drawTexturedPolygon(Sint16 *x, Sint16 *y, int n, Surface *texture,
  */
 void Surface::drawString(Sint16 x, Sint16 y, const char *s, Uint8 color)
 {
-	stringColor(_surface, x, y, s, Palette::getRGBA(getPalette(), color));
+	stringColor(_renderer, x, y, s, Palette::getRGBA(getPalette(), color));
 }
 
 /**

@@ -532,13 +532,22 @@ void TextEdit::keyboardPress(Action *action, State *state)
 			}
 			break;
 		default:
-			UCode c = 'a';//action->getDetails()->key.keysym.unicode;
-			if (isValidChar(c) && !exceedsMaxWidth(c))
-			{
-				_value.insert(_caretPos, 1, c);
-				_caretPos++;
-			}
 			break;
+		}
+	}
+
+	// Move to seperate text input function?
+	if (action->getDetails()->type == SDL_TEXTINPUT)
+	{
+		char *test = action->getDetails()->text.text;
+
+		// This only works for basic text.
+		UCode c = *(UCode *)test;
+
+		if (isValidChar(c) && !exceedsMaxWidth(c))
+		{
+			_value.insert(_caretPos, 1, c);
+			_caretPos++;
 		}
 	}
 	_redraw = true;

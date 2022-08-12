@@ -141,7 +141,7 @@ bool OpenGL::lock(uint32_t *&data, unsigned &pitch)
 }
 
 void OpenGL::clear() {
-	//memset(buffer, 0, iwidth * iheight * ibpp);
+	memset(buffer, 0, iwidth * iheight * buffer_surface->getSurface()->format->BytesPerPixel);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glErrorCheck();
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -151,7 +151,7 @@ void OpenGL::clear() {
 void OpenGL::refresh(bool smooth, unsigned inwidth, unsigned inheight, unsigned outwidth, unsigned outheight, int topBlackBand, int bottomBlackBand, int leftBlackBand, int rightBlackBand)
 {
 	while (glGetError() != GL_NO_ERROR); // clear possible error from who knows where
-	clear();
+	//clear();
 	if (shader_support && glprogram)
 	{
 		glUseProgram(glprogram);

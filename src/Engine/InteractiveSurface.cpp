@@ -195,7 +195,7 @@ void InteractiveSurface::handle(Action *action, State *state)
 
 	if (_isFocused)
 	{
-		if (action->getDetails()->type == SDL_KEYDOWN)
+		if (action->getDetails()->type == SDL_KEYDOWN || action->getDetails()->type == SDL_TEXTINPUT)
 		{
 			keyboardPress(action, state);
 		}

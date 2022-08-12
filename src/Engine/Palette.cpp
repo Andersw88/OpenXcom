@@ -99,7 +99,8 @@ SDL_Color *Palette::getColors(int offset) const
  */
 Uint32 Palette::getRGBA(SDL_Color* pal, Uint8 color)
 {
-	return ((Uint32) pal[color].r << 24) | ((Uint32) pal[color].g << 16) | ((Uint32) pal[color].b << 8) | (Uint32) 0xFF;
+	//return ((Uint32) pal[color].r << 24) | ((Uint32) pal[color].g << 16) | ((Uint32) pal[color].b << 8) | (Uint32) 0xFF;
+	return ((Uint32) 0xFF << 24) | ((Uint32) pal[color].b << 16) | ((Uint32) pal[color].g << 8) |  ((Uint32) pal[color].r);
 }
 
 void Palette::savePal(const std::string &file) const

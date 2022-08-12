@@ -417,7 +417,7 @@ if ( MSVC )
     add_compile_options ( /WX )
   endif ( FATAL_WARNING )
   set ( CMAKE_EXE_LINKER_FLAGS "/manifest:no" )
-  set ( CMAKE_MODULE_LINKER_FLAGS "/manifest:no" ) 
+  set ( CMAKE_MODULE_LINKER_FLAGS "/manifest:no" )
   set ( CMAKE_SHARED_LINKER_FLAGS="/manifest:no" )
 endif ()
 
@@ -481,7 +481,7 @@ if ( WIN32 )
     set ( static_flags  -static )
     set ( SDLMIXER_LIBRARY "${SDLMIXER_LIBRARY} -lwinmm" )
   endif ()
-  set ( system_libs ${basic_windows_libs} SDLmain ${static_flags} )
+  set ( system_libs ${basic_windows_libs} ${static_flags} )
 endif ()
 
 # backtrace(3) requires libexecinfo on some *BSD systems

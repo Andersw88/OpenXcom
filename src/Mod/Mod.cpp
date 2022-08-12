@@ -3682,16 +3682,12 @@ void Mod::createTransparencyLUT(Palette *pal)
 	for (std::vector<SDL_Color>::const_iterator tint = _transparencies.begin(); tint != _transparencies.end(); ++tint)
 	{
 		// then the opacity levels, using the alpha channel as the step
-<<<<<<< HEAD
 		for (int opacity = 1; opacity <= opacityMax; ++opacity)
-=======
-		for (int opacity = 1; opacity < 1 + tint->a * 4; opacity += tint->a)
->>>>>>> 829335496 (sdl2)
 		{
 			// pseudo interpolation of palette color with tint
 			// for small values `op` its should behave same as original TFTD
 			// but for bigger values it make result closer to tint color
-			const int op = Clamp(opacity * tint->unused, 0, 64);
+			const int op = Clamp(opacity * tint->a, 0, 64);
 			const float co = 1.0f - Sqr(op / 64.0f); // 1.0 -> 0.0
 			const float to = op * 1.0f; // 0.0 -> 64.0
 
