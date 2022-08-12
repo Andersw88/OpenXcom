@@ -1720,8 +1720,8 @@ void AIModule::wayPointAction()
 			{
 				_attackAction->waypoints.push_back(LastPosition);
 				LastWayPoint = LastPosition;
-			}
-			else if (CollidesWith == V_UNIT)
+			} // Check the position, in case the unit is kneeling, calculateLine misses. Will the projectile fly above the soldier?
+			else if (CollidesWith == V_UNIT || (CollidesWith == V_EMPTY && CurrentPosition == _aggroTarget->getPosition()))
 			{
 				BattleUnit* target = _save->getTile(CurrentPosition)->getUnit();
 				if (target == _aggroTarget)
