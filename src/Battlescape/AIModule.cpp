@@ -1732,7 +1732,10 @@ void AIModule::wayPointAction()
 			}
 			PathDirection = _save->getPathfinding()->dequeuePath();
 		}
-		_attackAction->target = _attackAction->waypoints.front();
+		if (!_attackAction->waypoints.empty())
+		{
+			_attackAction->target = _attackAction->waypoints.front();
+		}
 		if (LastWayPoint != _aggroTarget->getPosition())
 		{
 			_attackAction->type = BA_RETHINK;
