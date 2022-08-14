@@ -718,7 +718,7 @@ void AIModule::setupAttack()
 	if (selectNearestTarget())
 	{
 		// if we have both types of weapon, make a determination on which to use.
-		if (_melee && _rifle)
+		if (_melee && (_rifle || _blaster))
 		{
 			selectMeleeOrRanged();
 		}
@@ -1387,6 +1387,10 @@ void AIModule::evaluateAIMode()
 	// enforce the validity of our decision, and try fallback behaviour according to priority.
 	if (_AIMode == AI_COMBAT)
 	{
+		if (_attackAction->type == BA_LAUNCH)
+		{
+			return;
+		}
 		if (_save->getTile(_attackAction->target) && _save->getTile(_attackAction->target)->getUnit())
 		{
 			if (_attackAction->type != BA_RETHINK)
