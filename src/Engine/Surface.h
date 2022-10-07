@@ -144,6 +144,15 @@ public:
 	void resetCrop();
 	/// Gets the cropping rectangle for the surface.
 	SDL_Rect *getCrop();
+
+	void setPixel(int x, int y, const SDL_Color &color)
+	{
+		if (_renderer)
+		{
+			SDL_SetRenderDrawColor(_renderer, color.r, color.g, color.b, color.a);
+			SDL_RenderDrawPoint(_renderer, x, y);
+		}
+	}
 	/**
 	 * Changes the color of a pixel in the surface, relative to
 	 * the top-left corner of the surface. Invalid positions are ignored.
@@ -201,6 +210,7 @@ public:
 		}
 		return *getRaw(x, y);
 	}
+
 	/**
 	 * Returns the pointer to a specified pixel in the surface.
 	 * @param x X position of the pixel.

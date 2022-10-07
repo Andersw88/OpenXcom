@@ -6,6 +6,10 @@ project ( OpenXcom )
 # include(BuildType)
 include(GNUInstallDirs)
 
+add_compile_options(/wd4267)
+add_compile_options(/wd4244)
+add_compile_options(/wd4996)
+
 # For yaml-cpp
 set (CMAKE_CXX_STANDARD 11)
 # use std=c++11 rather than std=gnu++11

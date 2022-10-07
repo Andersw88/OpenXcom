@@ -149,8 +149,6 @@ Surface::Surface(int width, int height, int x, int y, int bpp) : _x(x), _y(y), _
 		throw Exception(SDL_GetError());
 	}
 
-
-
 	SDL_SetColorKey(_surface, SDL_TRUE, 0);
 
 	_crop.w = 0;
@@ -178,7 +176,7 @@ Surface::Surface(const Surface& other)
 		int pitch = GetPitch(bpp, width);
 		_alignedBuffer = NewAligned(bpp, width, height);
 		_surface = SDL_CreateRGBSurfaceFrom(_alignedBuffer, width, height, bpp, pitch, 0, 0, 0, 0);
-		SDL_RenderSetLogicalSize(_renderer, width, height);
+		// SDL_RenderSetLogicalSize(_renderer, width, height);
 		SDL_SetColorKey(_surface, SDL_TRUE, 0);
 		//cant call `setPalette` because its virtual function and it dont work correctly in constructor
 		SDL_SetPaletteColors(_surface->format->palette, other.getPalette(), 0, 255);
@@ -192,7 +190,8 @@ Surface::Surface(const Surface& other)
 
 	if(other._renderer)
 	{
-		_renderer = SDL_CreateSoftwareRenderer(_surface);
+		//_renderer = SDL_CreateSoftwareRenderer(_surface);
+		_renderer = other._renderer;
 	}
 
 	if (_surface == 0)
@@ -496,14 +495,9 @@ void Surface::clear(Uint32 color)
 {
 	if(_renderer)
 	{
-		//SDL_FillRect(_surface, &_clear, color);
-		//auto color = Palette::getRGBA(getPalette(), color);
 		auto c = (uint8_t *)(&color);
 		SDL_SetRenderDrawColor(_renderer, c[0], c[1], c[2], c[3]);
 		SDL_RenderClear(_renderer);
-		//SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
-		//SDL_SetRenderDrawColor(_renderer, 0, 0, 0, 0);
-		//SDL_RenderFillRect(_renderer, nullptr);
 	}
 	else
 	{
@@ -678,11 +672,7 @@ void Surface::blit(Surface *surface)
 		if (_redraw)
 			draw();
 
-		if(_renderer)
-		{
-			SDL_RenderPresent(this->_renderer);
-		}
-		SDL_Rect* cropper;
+		SDL_Rect *cropper;
 		SDL_Rect target;
 		if (_crop.w == 0 && _crop.h == 0)
 		{
@@ -694,10 +684,12 @@ void Surface::blit(Surface *surface)
 		}
 		target.x = getX();
 		target.y = getY();
-		int error = SDL_BlitSurface(_surface, cropper, surface->getSurface(), &target);
-		if (error != 0)
-			Log(LOG_WARNING) << "SDL_BlitSurface: " << error;
-		// printf("error %d\n", error);
+		/*int error = */SDL_BlitSurface(_surface, cropper, surface->getSurface(), &target);
+
+		//if (error)
+		//{
+		//	Log(LOG_INFO) << "blit(Surface *surface):" << SDL_GetError();
+		//}
 	}
 }
 
@@ -1014,10 +1006,10 @@ void Surface::blitNShade(Surface *surface, int x, int y, int off, bool half, int
 	{
 		--newBaseColor;
 		newBaseColor <<= 4;
-		ShaderDraw<ColorReplace>(ShaderSurface(surface), src, ShaderScalar(off), ShaderScalar(newBaseColor));
+		ShaderDraw<ColorReplace>(ShaderSurface<Uint8>(surface), src, ShaderScalar(off), ShaderScalar(newBaseColor));
 	}
 	else
-		ShaderDraw<StandardShade>(ShaderSurface(surface), src, ShaderScalar(off));
+		ShaderDraw<StandardShade>(ShaderSurface<Uint8>(surface), src, ShaderScalar(off));
 
 }
 

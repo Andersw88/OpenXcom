@@ -41,7 +41,7 @@ public:
 	}
 
 	inline ShaderMove(Surface* s, int move_x, int move_y):
-		_base(s),
+		helper::ShaderBase<Pixel>(s),
 		_move_x(move_x), _move_y(move_y)
 	{
 
@@ -112,9 +112,10 @@ struct controler<ShaderMove<Pixel> > : public controler_base<typename ShaderMove
  * @param s standard 8bit OpenXcom surface
  * @return
  */
-inline ShaderMove<Uint8> ShaderSurface(Surface* s)
+template<typename Pixel>
+inline ShaderMove<Pixel> ShaderSurface(Surface* s)
 {
-	return ShaderMove<Uint8>(s);
+	return ShaderMove<Pixel>(s);
 }
 
 /**
@@ -124,9 +125,10 @@ inline ShaderMove<Uint8> ShaderSurface(Surface* s)
  * @param y offset on y
  * @return
  */
-inline ShaderMove<Uint8> ShaderSurface(Surface* s, int x, int y)
+template<typename Pixel>
+inline ShaderMove<Pixel> ShaderSurface(Surface* s, int x, int y)
 {
-	return ShaderMove<Uint8>(s, x, y);
+	return ShaderMove<Pixel>(s, x, y);
 }
 
 /**

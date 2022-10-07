@@ -19,6 +19,7 @@
 #include "Palette.h"
 #include <fstream>
 #include "Exception.h"
+#include <vector>
 
 namespace OpenXcom
 {
@@ -55,6 +56,7 @@ void Palette::loadDat(const std::string &filename, int ncolors, int offset)
 	_colors = new SDL_Color[_count];
 	memset(_colors, 0, sizeof(SDL_Color) * _count);
 
+
 	// Load file and put colors in palette
 	std::ifstream palFile (filename.c_str(), std::ios::in | std::ios::binary);
 	if (!palFile)
@@ -76,6 +78,7 @@ void Palette::loadDat(const std::string &filename, int ncolors, int offset)
 		_colors[i].a = 255;
 	}
 	_colors[0].a = 0;
+	//std::vector<SDL_Color> colors2(_colors, _colors + _count);
 
 	palFile.close();
 }
@@ -99,7 +102,6 @@ SDL_Color *Palette::getColors(int offset) const
  */
 Uint32 Palette::getRGBA(SDL_Color* pal, Uint8 color)
 {
-	//return ((Uint32) pal[color].r << 24) | ((Uint32) pal[color].g << 16) | ((Uint32) pal[color].b << 8) | (Uint32) 0xFF;
 	return ((Uint32) 0xFF << 24) | ((Uint32) pal[color].b << 16) | ((Uint32) pal[color].g << 8) |  ((Uint32) pal[color].r);
 }
 

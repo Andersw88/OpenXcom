@@ -1,0 +1,13 @@
+{
+    "cmake.useCMakePresets":"never",
+    "cmake.parallelJobs": 8,
+    "files.associations": {
+        "Jenkinsfile*": "groovy",
+        "vector": "cpp",
+        "list": "cpp",
+        "sstream": "cpp",
+        "xlocale": "cpp",
+        "xiosbase": "cpp"
+    }
+    // "cmake.i
+}

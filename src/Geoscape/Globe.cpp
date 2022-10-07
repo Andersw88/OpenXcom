@@ -53,6 +53,12 @@
 #include "../Mod/RuleGlobe.h"
 #include "../Interface/Cursor.h"
 #include "../Engine/Screen.h"
+#include <iostream>
+#include "../Engine/Logger.h"
+
+#include <chrono>
+#include <thread>
+#include <functional>
 
 namespace OpenXcom
 {
@@ -165,9 +171,9 @@ GlobeStaticData static_data;
 
 struct Ocean
 {
-	static inline void func(Uint8& dest, const int&, const int&, const int&, const int&)
+	static inline void func(SDL_Color& dest, const int&, const int&, const int&, const int&)
 	{
-		dest = Globe::OCEAN_COLOR;
+		dest = SDL_Color{255, 128, 128, 255}; // Globe::OCEAN_COLOR;
 	}
 };
 
@@ -200,36 +206,39 @@ struct CreateShadow
 		return Clamp(temp.x, 0., 31.);
 	}
 
-	static inline Uint8 getOceanShadow(const Uint8& shadow)
+	static inline SDL_Color getOceanShadow(const Uint8& shadow, SDL_Color& palette)
 	{
-		return Globe::OCEAN_COLOR + shadow;
+
+		const SDL_Color& color = (&palette)[OpenXcom::Globe::OCEAN_COLOR + shadow];
+		return SDL_Color{ color.b, color.g, color.r, color.a};
 	}
 
-	static inline Uint8 getLandShadow(const Uint8& dest, const Uint8& shadow)
+	static inline SDL_Color getLandShadow(const SDL_Color& dest, const Uint8& shadow)
 	{
 		if (shadow == 0) return dest;
-		const int s = shadow / 3;
-		const int e = dest + s;
-		const int d = dest & helper::ColorGroup;
-		if (e > d + helper::ColorShade)
-			return d + helper::ColorShade;
-		return e;
+		const Uint8 s = shadow * 2;
+		Uint8 r = std::max(dest.r - s, 1);
+		Uint8 g = std::max(dest.g - s, 1);
+		Uint8 b = std::max(dest.b - s, 1);
+
+		return SDL_Color{r, g, b, 255};
 	}
 
-	static inline bool isOcean(const Uint8& dest)
+	static inline bool isOcean(const SDL_Color& dest)
 	{
-		return Globe::OCEAN_SHADING && dest >= Globe::OCEAN_COLOR && dest < Globe::OCEAN_COLOR + 32;
+		//return false;
+		return dest.r <= 10 && dest.g > 90 && dest.b > 90;
 	}
 
-	static inline void func(Uint8& dest, const Cord& earth, const Cord& sun, const Sint16& noise, const int&)
+	static inline void func(SDL_Color& dest, const Cord& earth, const Cord& sun, const Sint16& noise, SDL_Color& palette)
 	{
-		if (dest && earth.z)
+		if (earth.z)
 		{
 			const Uint8 shadow = getShadowValue(earth, sun, noise);
 			//this pixel is ocean
 			if (isOcean(dest))
 			{
-				dest = getOceanShadow(shadow);
+				dest = getOceanShadow(shadow, palette);
 			}
 			//this pixel is land
 			else
@@ -239,7 +248,7 @@ struct CreateShadow
 		}
 		else
 		{
-			dest = 0;
+			dest = SDL_Color{};
 		}
 	}
 };
@@ -266,11 +275,14 @@ Globe::Globe(Game* game, int cenX, int cenY, int width, int height, int x, int y
 
 	_countries = new Surface(width, height, x, y);
 	_markers = new Surface(width, height, x, y);
-	_radars = new Surface(width, height, x, y);
+	_radars = new Surface(width, height, x, y, 32);
+	_land = new Surface(width, height, x, y, 32);
 	_clipper = new FastLineClip(x, x+width, y, y+height);
 
 	setUseRendererInterface();
 	_countries->setUseRendererInterface();
+	_land->setUseRendererInterface();
+	_radars->setUseRendererInterface();
 
 	// Animation timers
 	_blinkTimer = new Timer(100);
@@ -875,15 +887,14 @@ void Globe::draw()
 		cachePolygons();
 	}
 	Surface::draw();
+	_land->clear();
 	drawOcean();
 	drawLand();
+	drawShadow();
 	drawRadars();
 	drawFlights();
-	drawShadow();
 	drawMarkers();
 	drawDetail();
-
-
 }
 
 
@@ -892,9 +903,39 @@ void Globe::draw()
  */
 void Globe::drawOcean()
 {
-	lock();
-	drawCircle(_cenX+1, _cenY, _radius+20, OCEAN_COLOR);
-	unlock();
+	_land->lock();
+
+	// Why is this not the color below?
+	const SDL_Color color = this->getPalette()[OCEAN_COLOR];
+
+	//const SDL_Color color = {
+	//	152, 159, 0, 255};
+
+
+	const std::array<int, 6> indices = {
+		0, 1, 2, 0, 2, 3};
+	std::vector<SDL_Vertex> verties =
+		{{{float(_cenX - _radius),
+		   float(_cenY - _radius)},
+		  color},
+		 {{float(_cenX + _radius),
+		   float(_cenY - _radius)},
+		  color},
+		 {{float(_cenX + _radius),
+		   float(_cenY + _radius)},
+		  color},
+		 {{float(_cenX - _radius),
+		   float(_cenY + _radius)},
+		  color}};
+
+	int error = SDL_RenderGeometry(_land->_renderer, nullptr, verties.data(), verties.size(), indices.data(), indices.size());
+
+	if (error)
+	{
+		Log(LOG_INFO) << "SDL_RenderGeometry:" << SDL_GetError() << "verties.size():" << verties.size();
+	}
+
+	_land->unlock();
 }
 
 
@@ -906,19 +947,92 @@ void Globe::drawOcean()
  */
 void Globe::drawLand()
 {
-	Sint16 x[4], y[4];
+	//Sint16 x[4], y[4];
+
+	const std::array<int, 6> indices = {
+		0, 1, 2, 0, 3, 2};
+	//std::array<int, 6> indices = {
+	//3, 2, 0, 2, 1, 0};
+
 
 	for (std::list<Polygon*>::iterator i = _cacheLand.begin(); i != _cacheLand.end(); ++i)
 	{
 		// Convert coordinates
+		std::vector<SDL_Vertex> verties;
+		verties.resize((*i)->getPoints());
+
+		SDL_Surface *surf = _texture->getFrame((*i)->getTexture() + _zoomTexture)->getSurface();
+		SDL_Texture *texture = SDL_CreateTextureFromSurface(_land->_renderer, surf);
+
+		float maxX = -std::numeric_limits<float>::infinity();
+		float maxY = -std::numeric_limits<float>::infinity();
+		float minX = std::numeric_limits<float>::infinity();
+		float minY = std::numeric_limits<float>::infinity();
 		for (int j = 0; j < (*i)->getPoints(); ++j)
 		{
-			x[j] = (*i)->getX(j);
-			y[j] = (*i)->getY(j);
+			//x[j] = (*i)->getX(j);
+			//y[j] = (*i)->getY(j);
+
+			SDL_Vertex & vertex = verties[j];
+			vertex.position.x = (*i)->getX(j);
+			vertex.position.y = (*i)->getY(j);
+
+			maxX = std::max(maxX, vertex.position.x);
+			maxY = std::max(maxY, vertex.position.y);
+			minX = std::min(minX, vertex.position.x);
+			minY = std::min(minY, vertex.position.y);
+
+			vertex.color = {255,
+							255,
+							255,
+							255};
 		}
 
-		// Apply textures according to zoom and shade
-		drawTexturedPolygon(x, y, (*i)->getPoints(), _texture->getFrame((*i)->getTexture() + _zoomTexture), *x, -(*y));
+		float w = maxX - minX;
+		float h = maxY - minY;
+		for (auto& vertex : verties)
+		{
+			vertex.tex_coord.x = (vertex.position.x - minX) / w ;
+			vertex.tex_coord.y = (vertex.position.y - minY) / h ;
+		}
+
+			//vertex.tex_coord.x = Clamp((*i)->getX(j) / float(_land->getWidth()), 0.0f, 1.0f);
+			//vertex.tex_coord.y = Clamp(1.0f -(*i)->getY(j)   / float(_land->getHeight()), 0.0f, 1.0f);
+
+		//SDL_Surface *surf = _texture->getFrame((*i)->getTexture() + _zoomTexture)->getSurface();
+
+		//texture-
+
+		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+		//texture->color = {255,
+		//				  0,
+		//				  0,
+		//				  255};
+
+		//SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+		//int error = SDL_RenderGeometry(_renderer, texture, verties.data(), verties.size(), indices.data(), indices.size());
+		int num_indices_used = (verties.size() - 2) * 3;
+		//SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
+		//SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_NONE);
+		int error = SDL_RenderGeometry(_land->_renderer, texture, verties.data(), verties.size(), indices.data(), num_indices_used);
+		//int error = SDL_RenderGeometry(_renderer, nullptr, verties.data(), verties.size(), indices.data(), num_indices_used);
+
+		//SDL_Rect dst_rect = {verties[0].position.x, verties[0].position.y, std::abs(verties[1].position.x - verties[0].position.x), std::abs(verties[1].position.y - verties[0].position.y)};
+		//int error =  SDL_RenderCopy(_renderer, texture, nullptr, &dst_rect);
+		//SDL_RenderCopy(_renderer, texture, nullptr, nullptr);
+		 //int error = SDL_RenderGeometry(_renderer, texture, verties.data(), verties.size(), indices.data(), num_indices_used);
+
+		 //SDL_RenderPresent(_renderer);
+		 //SDL_DestroyTexture(texture);
+
+		//if (error)
+		//{
+		//	Log(LOG_INFO) << "SDL_RenderGeometry:" << SDL_GetError() << "verties.size():" << verties.size();
+		//}
+
+		//// Apply textures according to zoom and shade
+		//drawTexturedPolygon(x, y, (*i)->getPoints(), _texture->getFrame((*i)->getTexture() + _zoomTexture), *x, -(*y));
 	}
 }
 
@@ -980,14 +1094,15 @@ Cord Globe::getSunDirection(double lon, double lat) const
 
 void Globe::drawShadow()
 {
-	ShaderMove<Cord> earth = ShaderMove<Cord>(_earthData[_zoom], getWidth(), getHeight());
+	ShaderMove<Cord> earth = ShaderMove<Cord>(_earthData[_zoom], _land->getWidth(), _land->getHeight());
 	ShaderRepeat<Sint16> noise = ShaderRepeat<Sint16>(_randomNoiseData, static_data.random_surf_size, static_data.random_surf_size);
 
-	earth.setMove(_cenX-getWidth()/2, _cenY-getHeight()/2);
+	earth.setMove(_cenX - _land->getWidth() / 2, _cenY - _land->getHeight() / 2);
 
-	lock();
-	ShaderDraw<CreateShadow>(ShaderSurface(this), earth, ShaderScalar(getSunDirection(_cenLon, _cenLat)), noise);
-	unlock();
+	_land->lock();
+	//ShaderDraw<CreateShadow>(ShaderSurface<SDL_Color>(_land), earth, ShaderScalar(getSunDirection(_cenLon, _cenLat)), noise);
+	ShaderDraw<CreateShadow>(ShaderSurface<SDL_Color>(_land), earth, ShaderScalar(getSunDirection(_cenLon, _cenLat)), noise, OpenXcom::helper::Scalar<SDL_Color&>(*this->getPalette()));
+	_land->unlock();
 
 }
 
@@ -998,7 +1113,7 @@ void Globe::XuLine(Surface* surface, Surface* src, double x1, double y1, double 
 
 	double deltax = x2-x1, deltay = y2-y1;
 	bool inv;
-	Sint16 tcol;
+	SDL_Color tcol;
 	double len,x0,y0,SX,SY;
 	if (abs((int)y2-(int)y1) > abs((int)x2-(int)x1))
 	{
@@ -1035,12 +1150,14 @@ void Globe::XuLine(Surface* surface, Surface* src, double x1, double y1, double 
 
 	while (len>0)
 	{
-		tcol=src->getPixel((int)x0,(int)y0);
-		if (tcol)
+		//tcol=src->getPixel((int)x0,(int)y0);
+		Uint8 *px = src->getRaw((int)x0, (int)y0);
+		tcol = SDL_Color{*(px + 2), *(px + 1), *(px + 0), *(px + 3)};
+		if ((tcol.r != 0 || tcol.g != 0 || tcol.b != 0) && tcol.a != 0)
 		{
 			if (CreateShadow::isOcean(tcol))
 			{
-				tcol = CreateShadow::getOceanShadow(shade + 8);
+				tcol = CreateShadow::getOceanShadow(shade + 8, *this->getPalette());
 			}
 			else
 			{
@@ -1164,7 +1281,7 @@ void Globe::drawGlobeCircle(double lat, double lon, double radius, int segments,
 			continue;
 		}
 		if (!pointBack(lon1,lat1) && i % frac == 0)
-			XuLine(_radars, this, x, y, x2, y2, 6);
+			XuLine(_radars, _land, x, y, x2, y2, 6);
 		x2=x; y2=y;
 		i++;
 	}
@@ -1443,7 +1560,7 @@ void Globe::drawPath(Surface *surface, double lon1, double lat1, double lon2, do
 
 		if (!pointBack(p1.lon, p1.lat) && !pointBack(p2.lon, p2.lat))
 		{
-			XuLine(surface, this, x1, y1, x2, y2, 8);
+			XuLine(surface, _land, x1, y1, x2, y2, 8);
 		}
 
 		p1 = p2;
@@ -1572,6 +1689,7 @@ void Globe::drawMarkers()
 void Globe::blit(Surface *surface)
 {
 	Surface::blit(surface);
+	_land->blit(surface);
 	_radars->blit(surface);
 	_countries->blit(surface);
 	_markers->blit(surface);
@@ -1717,14 +1835,7 @@ void Globe::mouseRelease(Action *action, State *state)
  */
 void Globe::mouseClick(Action *action, State *state)
 {
-	if (action->getDetails()->wheel.y > 0)
-	{
-		zoomIn();
-	}
-	else if (action->getDetails()->wheel.y < 0)
-	{
-		zoomOut();
-	}
+	//mouseWheel(action, state);
 	double lon, lat;
 	cartToPolar((Sint16)floor(action->getAbsoluteXMouse()), (Sint16)floor(action->getAbsoluteYMouse()), &lon, &lat);
 

@@ -146,7 +146,7 @@ void UnitSprite::drawRecolored(Surface *src)
 	if (_colorSize)
 	{
 		lock();
-		ShaderDraw<ColorReplace>(ShaderSurface(this), ShaderSurface(src), ShaderScalar(_color), ShaderScalar(_colorSize));
+		ShaderDraw<ColorReplace>(ShaderSurface<Uint8>(this), ShaderSurface<Uint8>(src), ShaderScalar(_color), ShaderScalar(_colorSize));
 		unlock();
 	}
 	else

@@ -58,7 +58,7 @@ private:
 	size_t _zoom, _zoomOld, _zoomTexture;
 	SurfaceSet *_texture, *_markerSet;
 	Game *_game;
-	Surface *_markers, *_countries, *_radars;
+	Surface *_markers, *_countries, *_radars, *_land;
 	bool _hover, _craft;
 	int _blink;
 	Timer *_blinkTimer, *_rotTimer;
